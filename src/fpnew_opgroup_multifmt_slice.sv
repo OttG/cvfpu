@@ -58,7 +58,8 @@ module fpnew_opgroup_multifmt_slice #(
   output logic                                    out_valid_o,
   input  logic                                    out_ready_i,
   // Indication of valid data in flight
-  output logic                                    busy_o
+  output logic                                    busy_o,
+  output logic                                    early_out_valid_o
 );
 
   localparam int unsigned MAX_FP_WIDTH   = fpnew_pkg::max_fp_width(FpFmtConfig);
@@ -94,6 +95,8 @@ module fpnew_opgroup_multifmt_slice #(
   logic   [NUM_LANES-1:0]               lane_masks;
   logic   [NUM_LANES-1:0][AUX_BITS-1:0] lane_aux; // only the first one is actually used
   logic   [NUM_LANES-1:0]               lane_busy; // dito
+  logic   [NUM_LANES-1:0]               lane_early_out_valid;
+
 
   logic                result_is_vector;
   logic [FMT_BITS-1:0] result_fmt;
@@ -234,7 +237,8 @@ module fpnew_opgroup_multifmt_slice #(
           .aux_o           ( lane_aux[lane]      ),
           .out_valid_o     ( out_valid           ),
           .out_ready_i     ( out_ready           ),
-          .busy_o          ( lane_busy[lane]     )
+          .busy_o          ( lane_busy[lane]     ),
+          .early_out_valid_o ( lane_early_out_valid[lane] )
         );
 
       end else if (OpGroup == fpnew_pkg::DIVSQRT) begin : lane_instance
@@ -270,7 +274,8 @@ module fpnew_opgroup_multifmt_slice #(
           .aux_o           ( lane_aux[lane]      ),
           .out_valid_o     ( out_valid           ),
           .out_ready_i     ( out_ready           ),
-          .busy_o          ( lane_busy[lane]     )
+          .busy_o          ( lane_busy[lane]     ),
+          .early_out_valid_o ( lane_early_out_valid[lane] )
         );
       end else if (OpGroup == fpnew_pkg::NONCOMP) begin : lane_instance
 
@@ -307,7 +312,8 @@ module fpnew_opgroup_multifmt_slice #(
           .aux_o           ( lane_aux[lane]      ),
           .out_valid_o     ( out_valid           ),
           .out_ready_i     ( out_ready           ),
-          .busy_o          ( lane_busy[lane]     )
+          .busy_o          ( lane_busy[lane]     ),
+          .early_out_valid_o ( lane_early_out_valid[lane] )
         );
       end // ADD OTHER OPTIONS HERE
 
@@ -433,6 +439,7 @@ module fpnew_opgroup_multifmt_slice #(
   assign extension_bit_o = lane_ext_bit[0]; // don't care about upper ones
   assign tag_o           = lane_tags[0];    // don't care about upper ones
   assign busy_o          = (| lane_busy);
+  assign early_out_valid_o = |lane_early_out_valid;
 
   assign out_valid_o     = lane_out_valid[0]; // don't care about upper ones
 
